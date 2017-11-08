@@ -6,7 +6,9 @@
       <el-container>
         <el-main id="container">
         </el-main>
-        <el-footer>Footer</el-footer>
+        <el-footer>
+          Footer
+        </el-footer>
       </el-container>
     </el-container>
   </el-container>
@@ -26,13 +28,18 @@ export default {
     }
   },
   created() {
-    const audio = new Audio((process.env.NODE_ENV === 'development')? 'http://localhost:3001/suka.mp3' : '/suka.mp3');
     this.$socket.on('connected', () => {
       console.log('user connected!')
-
-      audio.pause();
-      audio.currentTime = 0;
-      audio.play();
+      this.$notify({
+        title: 'User connected!',
+        dangerouslyUseHTMLString: true,
+        duration: 8000,
+        message:
+          `<video id="myVideo" width="320" height="176" autoplay>
+          <source src="http://localhost:3001/suka.mp4" type="video/mp4">
+          Your browser does not support HTML5 video.
+          </video>`
+      });
     });
   },
   mounted() {
@@ -137,5 +144,9 @@ export default {
     color: #333;
     text-align: center;
     line-height: 160px;
+  }
+
+  #myVideo {
+    margin-left: 10px;
   }
 </style>
