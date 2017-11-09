@@ -1,15 +1,16 @@
 <template>
   <el-container>
-    <el-header>{{header}}</el-header>
+    <el-header>
+      <el-button @click="createRoom">Create room</el-button>
+      Rooms:
+      <span v-for="room in rooms"><a href="#" @click="joinRoom(room)">{{room}}</a> | </span>
+    </el-header>
     <el-container>
-      <el-aside width="200px">Aside</el-aside>
-      <el-container>
-        <el-main id="container">
-        </el-main>
-        <el-footer>
-          Footer
-        </el-footer>
-      </el-container>
+      <el-main id="container">
+      </el-main>
+      <el-footer>
+        Footer
+      </el-footer>
     </el-container>
   </el-container>
     <!--<router-view/>-->
@@ -24,14 +25,30 @@ export default {
     return {
       header: 'HEAD!',
       image: null,
-      context: null
+      context: null,
+      rooms: []
+    }
+  },
+  methods: {
+    createRoom() {
+      this.$socket.emit('create_room')
+    },
+    joinRoom(room) {
+      this.$socket.emit('join_room', room)
     }
   },
   created() {
     const src = (process.env.NODE_ENV === 'development')? 'http://localhost:3001/suka.mp4' : '/suka.mp4';
+    this.$socket.emit('rooms');
+
+    this.$socket.on('rooms', data => {
+      console.log(data)
+      this.rooms = data;
+    });
+
     this.$socket.on('connected', () => {
       console.log('user connected!')
-      this.$notify({
+      /*this.$notify({
         title: 'User connected!',
         dangerouslyUseHTMLString: true,
         duration: 8000,
@@ -40,12 +57,13 @@ export default {
             <source src=${src} type="video/mp4">
             Your browser does not support HTML5 video.
           </video>`
-      });
+      });*/
     });
   },
   mounted() {
+    console.dir(document.getElementById('container'))
     const width = document.getElementById('container').clientWidth - 40;
-
+    console.log(width)
     const stage = new Konva.Stage({
       container: 'container',
       width,
