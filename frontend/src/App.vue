@@ -33,13 +33,9 @@ export default {
       console.log('user connected!')
       this.$notify({
         title: 'User connected!',
-        dangerouslyUseHTMLString: true,
         duration: 8000,
         message:
-          `<video id="myVideo" width="320" height="176" autoplay>
-            <source src=${src} type="video/mp4">
-            Your browser does not support HTML5 video.
-          </video>`
+          `Hello ${src}`
       });
     });
   },
