@@ -15,6 +15,7 @@ class Server {
     this.app.use(bodyParser.urlencoded({extended: false}));
     this.app.use(express.static('frontend/static'));
     this.app.use(express.static('frontend/dist'));
+    this.app.use('/.well-known', express.static('.well-known'));
 
     this.initEnv();
     this.createServer();
