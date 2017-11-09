@@ -28,6 +28,7 @@ export default {
     }
   },
   created() {
+    const src = (process.env.NODE_ENV === 'development')? 'http://localhost:3001/suka.mp4' : '/suka.mp4';
     this.$socket.on('connected', () => {
       console.log('user connected!')
       this.$notify({
@@ -36,8 +37,8 @@ export default {
         duration: 8000,
         message:
           `<video id="myVideo" width="320" height="176" autoplay>
-          <source src="http://localhost:3001/suka.mp4" type="video/mp4">
-          Your browser does not support HTML5 video.
+            <source src=${src} type="video/mp4">
+            Your browser does not support HTML5 video.
           </video>`
       });
     });
