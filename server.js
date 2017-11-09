@@ -1,4 +1,5 @@
-const http = require('http');
+const https = require('https');
+const fs = require('fs');
 const express = require('express');
 const io = require('socket.io');
 const bodyParser = require('body-parser');
@@ -50,8 +51,13 @@ class Server {
   }
 
   createServer() {
+    const opt = {
+      ca: fs.readFileSync(`${appRoot}/certificates/ca_bundle.crt`),
+      key: fs.readFileSync(`${appRoot}/certificates/private.key`),
+      cert: fs.readFileSync(`${appRoot}/certificates/certificate.crt`),
+    };
     const port = process.env.PORT || 3001;
-    this.server = http.createServer(this.app);
+    this.server = https.createServer(opt, this.app);
     this.server.listen(port, () => {
       console.log(`Start listening on localhost:${port}`)
     });
