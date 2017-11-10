@@ -38,8 +38,10 @@ class Server {
   }
 
   initSockets() {
+    const cookieParser = require('socket.io-cookie-parser');
     const eventsConfig = new EventsConfig();
     this.io = io(this.server);
+    this.io.use(cookieParser());
 
     this.io.on('connection', eventsConfig.onConnect.bind(eventsConfig));
   }

@@ -2,9 +2,8 @@ class Events {
   constructor() {}
 
   onConnect(socket) {
-    console.log('user connected', socket.id);
+    console.log('user connected', socket.request.cookies, socket.request.signedCookies);
     socket.broadcast.emit('connected');
-    socket.emit('rooms');
     this.initEvents(socket);
   }
 
