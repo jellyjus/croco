@@ -1,8 +1,11 @@
+const vkAuthMiddleware = require('./VkAuthMiddleware');
+
 class Events {
   constructor() {}
 
   onConnect(socket) {
-    console.log('user connected', socket.request.cookies, socket.request.signedCookies);
+    vkAuthMiddleware(socket);
+    console.log('user connected', socket.uid);
     socket.broadcast.emit('connected');
     this.initEvents(socket);
   }

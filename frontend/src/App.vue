@@ -18,6 +18,7 @@
 
 <script>
   import Konva from 'konva';
+  import Utils from './utils'
 
 export default {
   name: 'app',
@@ -26,10 +27,28 @@ export default {
       header: 'HEAD!',
       image: null,
       context: null,
-      rooms: []
+      rooms: [],
     }
   },
   methods: {
+    initSocketEvents() {
+      this.$socket.on('rooms', data => {
+        this.rooms = data;
+      });
+
+      this.$socket.on('connected', () => {
+        console.log('user connected!')
+      });
+    },
+    parseLocationParams() {
+      const vkProps = {};
+      const tmp = window.location.search.split('&');
+      for (let key of tmp) {
+        const prop = key.split('=');
+        vkProps[prop[0]] = prop[1]
+      }
+      Utils.setCookie(['auth_key', 'viewer_id'], [vkProps['auth_key'], vkProps['viewer_id']])
+    },
     createRoom() {
       this.$socket.emit('create_room')
     },
@@ -38,25 +57,8 @@ export default {
     }
   },
   created() {
-    const src = (process.env.NODE_ENV === 'development')? 'http://localhost:3001/suka.mp4' : '/suka.mp4';
-
-    this.$socket.on('rooms', data => {
-      this.rooms = data;
-    });
-
-    this.$socket.on('connected', () => {
-      console.log('user connected!')
-      /*this.$notify({
-        title: 'User connected!',
-        dangerouslyUseHTMLString: true,
-        duration: 8000,
-        message:
-          `<video id="myVideo" width="320" height="176" autoplay>
-            <source src=${src} type="video/mp4">
-            Your browser does not support HTML5 video.
-          </video>`
-      });*/
-    });
+    this.initSocketEvents();
+    this.parseLocationParams();
   },
   mounted() {
     const width = document.getElementById('container').clientWidth - 40;
