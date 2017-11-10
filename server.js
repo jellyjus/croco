@@ -2,6 +2,7 @@ const http = require('http');
 const express = require('express');
 const io = require('socket.io');
 const bodyParser = require('body-parser');
+const EventsConfig = require('./routing/EventsConfig');
 global.appRoot = __dirname;
 
 const utils = require(`${appRoot}/utils`);
@@ -37,36 +38,10 @@ class Server {
   }
 
   initSockets() {
+    const eventsConfig = new EventsConfig();
     this.io = io(this.server);
 
-    this.io.on('connection', (socket) => {
-      console.log('user connected');
-      socket.broadcast.emit('connected');
-
-      socket.on('disconnect', () => {
-        console.log('user disconnected');
-      });
-
-      socket.on('drawing', (data) => {
-        socket.broadcast.to(socket.room).emit('drawing', data);
-      });
-
-      socket.on('create_room', () => {
-        const roomName = utils.randStr();
-        this.rooms.push(roomName);
-        socket.join(roomName);
-        this.io.emit('rooms', this.rooms);
-      });
-
-      socket.on('rooms', () => {
-        socket.emit('rooms', this.rooms);
-      });
-
-      socket.on('join_room', room => {
-        socket.join(room);
-        socket.room = room;
-      })
-    });
+    this.io.on('connection', eventsConfig.onConnect.bind(eventsConfig));
   }
 
   createServer() {

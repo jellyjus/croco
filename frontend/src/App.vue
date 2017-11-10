@@ -39,10 +39,8 @@ export default {
   },
   created() {
     const src = (process.env.NODE_ENV === 'development')? 'http://localhost:3001/suka.mp4' : '/suka.mp4';
-    this.$socket.emit('rooms');
 
     this.$socket.on('rooms', data => {
-      console.log(data)
       this.rooms = data;
     });
 
@@ -61,9 +59,7 @@ export default {
     });
   },
   mounted() {
-    console.dir(document.getElementById('container'))
     const width = document.getElementById('container').clientWidth - 40;
-    console.log(width)
     const stage = new Konva.Stage({
       container: 'container',
       width,
