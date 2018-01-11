@@ -1,5 +1,6 @@
 const http = require('http');
 const express = require('express');
+const forceSsl = require('force-ssl-heroku');
 const io = require('socket.io');
 const bodyParser = require('body-parser');
 const EventsConfig = require('./routing/EventsConfig');
@@ -18,7 +19,7 @@ class Server {
     this.app.use(bodyParser.urlencoded({extended: false}));
     this.app.use(express.static('frontend/static'));
     this.app.use(express.static('frontend/dist'));
-    this.app.use('/.well-known', express.static('.well-known'));
+    this.app.use(forceSsl);
 
     this.initEnv();
     this.createServer();
