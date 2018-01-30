@@ -48,7 +48,6 @@ class Server {
       console.log(`Start listening on localhost:${port}`)
     });
   }
-
 }
 
 module.exports = new Server;
