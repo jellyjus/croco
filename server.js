@@ -5,8 +5,6 @@ const bodyParser = require('body-parser');
 const EventsConfig = require('./routing/EventsConfig');
 global.appRoot = __dirname;
 
-const utils = require(`${appRoot}/utils`);
-
 class Server {
   constructor() {
     this.app = express();
