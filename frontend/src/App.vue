@@ -5,7 +5,7 @@
         <el-row :gutter="20">
           <el-col :span="18"><div class="grid-content bg-purple" id="container"></div></el-col>
           <el-col :span="6">
-            <div class="chat bg-purple">
+            <div class="chat bg-purple" id="chat">
               <div class="chat-item" v-for="message in messages">
                 <img :src="message.user.photo_50" class="chat-item-avatar">
                 {{message.user.first_name}}: <br>
@@ -39,6 +39,7 @@
 <script>
   import Konva from 'konva';
   import Utils from './utils'
+  let chat;
 
 export default {
   name: 'app',
@@ -65,11 +66,11 @@ export default {
       });
 
       this.$socket.on('new_message', data => {
-        this.messages.push(data)
+        this.newMessage(data)
       });
 
       this.$socket.on('game_winner', user => {
-        this.messages.push({
+        this.newMessage({
           user: {
             photo_50:'https://pp.userapi.com/c621515/v621515165/5a34e/rMBv7HGfD68.jpg',
             first_name: 'Console'
@@ -81,7 +82,7 @@ export default {
       });
 
       this.$socket.on('game_start', (user) => {
-        this.messages.push({
+        this.newMessage({
           user: {
             photo_50:'https://pp.userapi.com/c621515/v621515165/5a34e/rMBv7HGfD68.jpg',
             first_name: 'Console'
@@ -100,6 +101,13 @@ export default {
         this.hostDialog = true;
       });
     },
+    newMessage(data) {
+      this.messages.push(data);
+      setTimeout(() => {
+        chat.scrollTop = chat.scrollHeight + 100;
+      })
+
+    },
     parseLocationParams() {
       const vkProps = {};
       const tmp = window.location.search.split('&');
@@ -110,7 +118,9 @@ export default {
       Utils.setCookie(['auth_key', 'viewer_id'], [vkProps['auth_key'], vkProps['viewer_id']])
     },
     sendMessage() {
-      this.$socket.emit('send_message', this.message)
+      if (!this.message)
+        return;
+      this.$socket.emit('send_message', this.message);
       this.message = null;
     },
     selectHostWord(word) {
@@ -123,11 +133,12 @@ export default {
     this.parseLocationParams();
   },
   mounted() {
+    chat = document.getElementById('chat');
     const width = document.getElementById('container').clientWidth - 40;
     const stage = new Konva.Stage({
       container: 'container',
       width,
-      height: 700
+      height: 600
     });
     const layer = new Konva.Layer();
     stage.add(layer);
@@ -209,8 +220,9 @@ export default {
   }
 
   .chat {
-    height: 700px;
+    height: 600px;
     margin-bottom: 10px;
+    overflow-y: auto;
   }
 
   .chat-item {
