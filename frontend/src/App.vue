@@ -1,23 +1,34 @@
 <template>
   <div>
     <el-container>
-      <el-main>
-        <el-row :gutter="20">
-          <el-col :span="18"><div class="grid-content bg-purple" id="container"></div></el-col>
-          <el-col :span="6">
-            <div class="chat bg-purple" id="chat">
-              <div class="chat-item" v-for="message in messages">
-                <img :src="message.user.photo_50" class="chat-item-avatar">
-                {{message.user.first_name}}: <br>
-                {{message.message}}
-              </div>
-            </div>
-            <form @submit.prevent="sendMessage">
-              <el-input placeholder="Message" v-model="message" suffix-icon=""></el-input>
-            </form>
-          </el-col>
-        </el-row>
-      </el-main>
+
+      <div class="canvas-container bg-purple">
+        <canvas id="canvas" height="600px" width="700"></canvas>
+        <div class="bar">
+          <img class="bar-item" :class="{'bar-item--active': currentColor === color}" v-for="color in colors" :src="`/static/${color}.png`" @click="() => currentColor = color">
+          <div class="bar-sizeitem">
+            <div class="bar-size-picker"
+                 :class="{'bar-size-picker--active': currentSize === size.size}"
+                 :style="{width: `${size.radius}px`, height: `${size.radius}px`, top: size.position}"
+                 v-for="size of sizes"
+                @click="() => currentSize = size.size"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-container bg-purple">
+        <div class="chat" id="chat">
+          <div class="chat-item" v-for="message in messages">
+            <img :src="message.user.photo_50" class="chat-item-avatar">
+            {{message.user.first_name}}: <br>
+            {{message.message}}
+          </div>
+        </div>
+        <form @submit.prevent="sendMessage">
+          <el-input placeholder="Message" v-model="message" suffix-icon=""></el-input>
+        </form>
+      </div>
+
     </el-container>
 
     <el-dialog
@@ -37,7 +48,7 @@
 </template>
 
 <script>
-  import Konva from 'konva';
+  import paper from 'paper'
   import Utils from './utils'
   let chat;
 
@@ -45,14 +56,22 @@ export default {
   name: 'app',
   data() {
     return {
-      canvas: null,
-      context: null,
+      colors: ['black', 'red', 'green', 'blue', 'white'],
+      sizes: [
+        {position: '0px', size: 40, radius: 23},
+        {position: '6px', size: 20, radius: 18},
+        {position: '12px', size: 10, radius: 10},
+        {position: '20px', size: 2, radius: 10}
+      ],
+      currentColor: 'black',
+      currentSize: 2,
       message: null,
       messages: [],
       game: false,
       host: false,
       hostDialog: false,
-      hostWords: []
+      hostWords: [],
+      path: null
     }
   },
   methods: {
@@ -89,9 +108,6 @@ export default {
           },
           message: `Game starts with host: ${user.first_name}`
         });
-        this.context.clearRect(0, 0, 1000, 1000);
-        this.context.beginPath();
-        this.context.closePath();
         this.game = true;
       });
 
@@ -100,6 +116,18 @@ export default {
         this.hostWords = data;
         this.hostDialog = true;
       });
+
+      this.$socket.on('draw-new_path', data => {
+        this.path = new paper.Path({
+          segments: [new paper.Point(data.point[1], data.point[2])],
+          strokeColor: data.color,
+          strokeWidth: data.size
+        });
+      });
+
+      this.$socket.on('draw', point => {
+        this.path.add(new paper.Point(point[1], point[2]));
+      })
     },
     newMessage(data) {
       this.messages.push(data);
@@ -134,95 +162,57 @@ export default {
   },
   mounted() {
     chat = document.getElementById('chat');
-    const width = document.getElementById('container').clientWidth - 40;
-    const stage = new Konva.Stage({
-      container: 'container',
-      width,
-      height: 600
-    });
-    const layer = new Konva.Layer();
-    stage.add(layer);
-    this.canvas = document.createElement('canvas');
-    this.canvas.width = stage.width();
-    this.canvas.height = stage.height();
-    const image = new Konva.Image({
-      image: this.canvas,
-      x : 0,
-      y : 0,
-    });
-    layer.add(image);
-    stage.draw();
-    this.context = this.canvas.getContext('2d');
-    this.context.strokeStyle = "#df4b26";
-    this.context.lineJoin = "round";
-    this.context.lineWidth = 5;
 
-    let isPaint = false;
-    let lastPointerPosition;
-    let mode = 'brush';
+    const canvas = document.getElementById('canvas');
+    const tool = new paper.Tool();
+    paper.setup(canvas);
 
-    stage.on('contentMousedown.proto', () => {
-      isPaint = true;
-      lastPointerPosition = stage.getPointerPosition();
-    });
-    stage.on('contentMouseup.proto', () => {
-      isPaint = false;
-    });
-    stage.on('contentMousemove.proto', () => {
-      if (!isPaint || (this.game && !this.host)) {
-        return;
-      }
-      if (mode === 'brush') {
-        this.context.globalCompositeOperation = 'source-over';
-      }
-      if (mode === 'eraser') {
-        this.context.globalCompositeOperation = 'destination-out';
-      }
-      this.context.beginPath();
-      let startPos = {
-        x: lastPointerPosition.x - image.x(),
-        y: lastPointerPosition.y - image.y()
-      };
-      this.context.moveTo(startPos.x, startPos.y);
-      let pos = stage.getPointerPosition();
-      let endPos = {
-        x: pos.x - image.x(),
-        y: pos.y - image.y()
-      };
-      this.context.lineTo(endPos.x, endPos.y);
-      this.context.closePath();
-      this.context.stroke();
-      layer.draw();
-
-      this.$socket.emit('drawing', {
-        startPos: {x: lastPointerPosition.x, y: lastPointerPosition.y},
-        endPos: {x: pos.x, y: pos.y}
+    tool.onMouseDown = (event) => {
+      this.path = new paper.Path({
+        segments: [event.point],
+        strokeColor: this.currentColor,
+        strokeWidth: this.currentSize * 0.5
       });
+      this.$socket.emit('draw-new_path',{
+        point:  event.point,
+        color: this.currentColor,
+        size: this.currentSize * 0.5
+      })
+    };
 
-      lastPointerPosition = pos;
-    });
+    let counter = 0;
+    tool.onMouseDrag = (event) => {
+      counter++;
+      if (counter === 5) {
+        counter = 0;
+        this.$socket.emit('draw', event.point)
+      }
+      this.path.add(event.point);
+    };
 
-    this.$socket.on('drawing', (data) => {
-      this.context.beginPath();
-      this.context.moveTo(data.startPos.x - image.x(), data.startPos.y - image.y());
-      this.context.lineTo(data.endPos.x - image.x(), data.endPos.y - image.y());
-      this.context.closePath();
-      this.context.stroke();
-      layer.draw();
-    })
+    tool.onMouseUp = (event) => {
+      this.path.simplify();
+    };
   }
 }
 </script>
 
 <style>
+  #canvas {
+    background-color: white;
+  }
+
   .bg-purple {
-    background: #e5e9f2;
+    background: #edeef0;
+    display: inline-block;
+    padding: 10px;
   }
 
   .chat {
     height: 600px;
     margin-bottom: 10px;
     overflow-y: auto;
+    background-color: white;
   }
 
   .chat-item {
@@ -239,4 +229,56 @@ export default {
     margin-right: 5px;
     align-self: flex-start;
   }
-</style>
+
+  .bar {
+    background-color: rgba(0, 0, 0, 0.1);
+    height: 100px;
+    margin-top: -4px;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bar img, .bar-sizeitem {
+    height: 90px
+  }
+
+  .bar-item {
+    position: relative;
+    top: -10px;
+    transition: .1s;
+  }
+
+  .bar-item:hover, .bar-item--active{
+    cursor: pointer;
+    top: -2px
+  }
+
+  .bar-item:active{
+    top: 0
+  }
+
+  .bar-sizeitem {
+    width: 50px;
+    background: url(/static/size.png) 100% 100% no-repeat;
+    background-size: cover;
+  }
+
+  .bar-size-picker {
+    border-radius: 50%;
+    position: relative;
+    left: 14px;
+  }
+
+  .bar-size-picker--active:before {
+    content: "";
+    display: block;
+    width: 13px;
+    height: 2px;
+    background-color: black;
+    position: relative;
+    top: calc(50% - 1px);
+    left: -14px;
+  }
+ </style>

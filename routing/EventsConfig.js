@@ -30,10 +30,16 @@ class Events {
 
     });
 
-    socket.on('drawing', data => {
+    socket.on('draw', data => {
       if (this.state.game && !socket.user.host)
         return;
-      socket.broadcast.emit('drawing', data);
+      socket.broadcast.emit('draw', data);
+    });
+
+    socket.on('draw-new_path', data => {
+      if (this.state.game && !socket.user.host)
+        return;
+      socket.broadcast.emit('draw-new_path', data);
     });
 
     socket.on('send_message', message => {
