@@ -3,7 +3,7 @@
     <el-container>
 
       <div class="canvas-container bg-purple">
-        <canvas id="canvas" height="600px" width="700"></canvas>
+        <canvas id="canvas" height="600px" width="600"></canvas>
         <div class="bar">
           <img class="bar-item" :class="{'bar-item--active': currentColor === color}" v-for="color in colors" :src="`/static/${color}.png`" @click="() => currentColor = color">
           <div class="bar-sizeitem">
@@ -209,6 +209,7 @@ export default {
   }
 
   .chat {
+    width: 210px;
     height: 600px;
     margin-bottom: 10px;
     overflow-y: auto;
